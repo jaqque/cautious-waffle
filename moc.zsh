@@ -71,9 +71,9 @@ get_gem_stars() {
 rolls=0
 
 # set PRNG seed, if passed
-#if [[ $1 ]]; then
-#  RANDOM=$1
-#fi
+if [[ $1 ]]; then
+ RANDOM=$1
+fi
 
 ## debugging function; safe to ignore
 # inc() {
