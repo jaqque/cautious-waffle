@@ -41,6 +41,7 @@ get_gem_type() {
     if (( random_roll < (gem_chance) )); then
       break
     fi
+    : $((random_roll-=gem_chance))
   done
   output=$potential_type
   : ${(P)${variable_name}::=${output}}
@@ -73,30 +74,49 @@ get_gem_stars() {
 
   : ${(P)${variable_name}::=${output}}
 }
-rolls=0
 
 # set PRNG seed, if passed
 if [[ $1 ]]; then
  RANDOM=$1
 fi
 
-# for g in ${(k)gems}; do
-#   get_gem_name n $g
-#   get_gem_stars s $g
-#   print "I: $g ($s) \"$n\""
-# done
-# exit 0;
-ten_cr_run=()
-while [[ rolls -lt 10 ]]; do
-  get_gem_type gem_type
-  get_gem_name gem $gem_type
-  get_gem_stars stars $gem_type
-  printf 'you found a [%3s] %-10b %s\n' $gem_type $stars $gem
-  result="$gem_type,$stars,$gem"
-  # increment rolls
-  ten_cr_run+=($result)
-  : $(( rolls++ ))
+typeset -A totals
+need_five_stars=true
+crest_runs=0
+csv_document=()
+
+while [[ $need_five_stars == true ]]; do
+  ten_cr_run=()
+  rolls=0
+  while [[ rolls -lt 10 ]]; do
+    get_gem_type gem_type
+    get_gem_name gem $gem_type
+    get_gem_stars stars $gem_type
+    if [[ $gem_type == "5/5" ]]; then
+      need_five_stars=false
+    fi
+    : $((totals[$gem_type]+=1 ))
+    # printf '[%d/%4d] you found a [%3s] %-10b %s\n' \
+    #   $rolls $crest_runs $gem_type $stars $gem
+    printf '[%d/%4d] %-10b %s\n' \
+      $rolls $crest_runs $stars $gem
+    result="$gem_type,$stars,$gem"
+    ten_cr_run+=($result)
+    # increment rolls
+    : $(( rolls++ ))
+  done
+  printf ' --  --  --\n'
+  # print "${(j:,:)ten_cr_run}"
+  csv_document+=(${(j:,:)ten_cr_run})
+  : $(( crest_runs++ ))
 done
+# print "${(j:\n:)csv_document}"
+print "TOTAL RUNS: $crest_runs"
+print "You spent: \$$(( crest_runs * 25 ))"
+print "I hope it was worth it."
 
-print "${(j:,:)ten_cr_run}"
-
+print "GEM SUMMARY:"
+for key in ${(ok)totals}; do
+  printf '%-3s %5i\n' \
+    $key ${totals[$key]}
+done
