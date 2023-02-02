@@ -80,6 +80,11 @@ if [[ $1 ]]; then
  RANDOM=$1
 fi
 
+# CONSTANTS
+
+typeset -r legos_per_run=10
+typeset -r dollars_per_run=25
+
 typeset -A totals
 need_five_stars=true
 crest_runs=0
@@ -88,7 +93,7 @@ csv_document=()
 while [[ $need_five_stars == true ]]; do
   ten_cr_run=()
   rolls=0
-  while [[ rolls -lt 10 ]]; do
+  while [[ rolls -lt legos_per_run ]]; do
     get_gem_type gem_type
     get_gem_name gem $gem_type
     get_gem_stars stars $gem_type
@@ -112,11 +117,13 @@ while [[ $need_five_stars == true ]]; do
 done
 # print "${(j:\n:)csv_document}"
 print "TOTAL RUNS: $crest_runs"
-print "You spent: \$$(( crest_runs * 25 ))"
+print "You spent: \$$(( crest_runs * dollars_per_run ))"
 print "I hope it was worth it."
 
 print "GEM SUMMARY:"
 for key in ${(ok)totals}; do
-  printf '%-3s %5i\n' \
-    $key ${totals[$key]}
+  printf '%-3s %5i (%7.4f%%)\n' \
+    $key \
+    ${totals[$key]} \
+    $(( 100.0 * totals[$key] / (legos_per_run * crest_runs ) ))
 done
