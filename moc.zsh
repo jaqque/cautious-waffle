@@ -1,20 +1,18 @@
 #!/usr/bin/env zsh
 
-typeset -A gems
-gems[1]='\u2605 trickshot black-rose everlasting-torment'
-gems[2]='\u2605\u20\u2605 power-and-command hunger bloody-reach'
-gems[2/5]='\u2605\u20\u2605\u20\u2606\u20\u2606\u20\u2606 bottled-hope phoenix-ashes bsj'
-gems[3/5]='\u2605\u20\u2605\u20\u2605\u20\u2606\u20\u2606 '${${(ps: :)gems[2/5]}[2,-1]}
-gems[4/5]='\u2605\u20\u2605\u20\u2606\u20\u2605\u20\u2606 '$gems[2/5]
-gems[5/5]='\u2605\u20\u2605\u20\u2606\u20\u2606\u20\u2605 '$gems[2/5]
+# from the simulator:
+# const GEM_TYPES = [1, 2, 5];
+# const GEM_ODDS = [0.754, 0.201, 0.045];
+# const FIVE_STAR_GEM_TYPES = [2, 3, 4, 5]
+# const FIVE_STAR_ODDS = [0.75, 0.2, 0.04, 0.01];
 
-# typeset -A stars
-# stars[1]=$'\u2605'
-# stars[2]=$'\u2605\u20\u2605'
-# stars[2/5]=$'\u2605\u20\u2605\u20\u2606\u20\u2606\u20\u2606'
-# stars[3/5]=$'\u2605\u20\u2605\u20\u2605\u20\u2606\u20\u2606'
-# stars[4/5]=$'\u2605\u20\u2605\u20\u2605\u20\u2605\u20\u2606'
-# stars[5/5]=$'\u2605\u20\u2605\u20\u2605\u20\u2605\u20\u2605'
+typeset -A gems
+gems[1]='0.754,\u2605 trickshot black-rose everlasting-torment'
+gems[2]='0.201,\u2605\u20\u2605 power-and-command hunger bloody-reach'
+gems[2/5]='0.045*0.75,\u2605\u20\u2605\u20\u2606\u20\u2606\u20\u2606 bottled-hope phoenix-ashes bsj'
+gems[3/5]='0.045*0.20,\u2605\u20\u2605\u20\u2605\u20\u2606\u20\u2606 '${${(ps: :)gems[2/5]}[2,-1]}
+gems[4/5]='0.045*0.04,\u2605\u20\u2605\u20\u2605\u20\u2605\u20\u2606 '${${(ps: :)gems[2/5]}[2,-1]}
+gems[5/5]='0.045*0.01,\u2605\u20\u2605\u20\u2605\u20\u2605\u20\u2605 '${${(ps: :)gems[2/5]}[2,-1]}
 
 get_random_number() {
   local variable_name output
@@ -31,14 +29,20 @@ get_random_number() {
 
 get_gem_type() {
   local variable_name output
-  local number_of_gem_types random_index
+  local number_of_gem_types random_roll potential_type
   variable_name=$1
   # means returns number of items in array
   # (k) means return keys as an array
   number_of_gem_types=${#${(k)gems}}
   # (k) means return keys as an array
-  get_random_number random_index $number_of_gem_types
-  output=${${(k)gems}[(( random_index % number_of_gem_types + 1 ))]}
+  get_random_number random_roll
+  for potential_type in ${(k)gems}; do
+    gem_chance=${${(ps: :)gems[$potential_type]}[1]%,*}
+    if (( random_roll < (gem_chance) )); then
+      break
+    fi
+  done
+  output=$potential_type
   : ${(P)${variable_name}::=${output}}
 }
 
@@ -63,8 +67,9 @@ get_gem_stars() {
   # or i could just - *GASP* - use **GLOBALS**
   local variable_name output
   variable_name=$1
+  gem_type=$2
 
-  output=${${(ps: :)gems[$gem_type]}[1]}
+  output="${${(ps: :)gems[$gem_type]}[1]#*,} "
 
   : ${(P)${variable_name}::=${output}}
 }
@@ -75,28 +80,23 @@ if [[ $1 ]]; then
  RANDOM=$1
 fi
 
-## debugging function; safe to ignore
-# inc() {
-#   local variable_name output
-#   variable_name=$1
-#   output=${(P)${variable_name}}
-#   : $(( output++ ))
-#   : ${(P)${variable_name}::=${output}}
-# }
-
-
+# for g in ${(k)gems}; do
+#   get_gem_name n $g
+#   get_gem_stars s $g
+#   print "I: $g ($s) \"$n\""
+# done
+# exit 0;
+ten_cr_run=()
 while [[ rolls -lt 10 ]]; do
-  # echo -n "internal: "
-  # inc _internal
-  # print $_internal
-  # print RAND=$(get_random_number $RANDOM)
-  # echo 3x: $RANDOM $RANDOM $RANDOM
   get_gem_type gem_type
   get_gem_name gem $gem_type
   get_gem_stars stars $gem_type
-  echo "you found a $stars  $gem"
-
+  printf 'you found a [%3s] %-10b %s\n' $gem_type $stars $gem
+  result="$gem_type,$stars,$gem"
   # increment rolls
+  ten_cr_run+=($result)
   : $(( rolls++ ))
 done
+
+print "${(j:,:)ten_cr_run}"
 
