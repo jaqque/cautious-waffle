@@ -17,3 +17,8 @@ chosen_egg = basket[chosen_number - 1]
 
 print(f'The number you chose was {chosen_number}. This means you picked a '
       f'{chosen_egg} egg.')
+
+# Oh btw- random has "choice"-
+# https://docs.python.org/3/library/random.html#random.choice
+# But still walking through how to do this yourself first, should you ever need
+# to do this without such power again in the future.
